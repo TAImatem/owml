@@ -1,8 +1,10 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using System;
+using System.Linq;
+using System.Collections.Generic;
+using Newtonsoft.Json.Linq;
 using OWML.Common;
 using OWML.Common.Menus;
 using OWML.ModHelper.Events;
-using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -21,6 +23,8 @@ namespace OWML.ModHelper.Menus
         private IModTextInput _textInputTemplate;
         private IModComboInput _comboInputTemplate;
         private IModNumberInput _numberInputTemplate;
+
+        private Dictionary<string, IModInputGeneral> InputsRegistry = new Dictionary<string, IModInputGeneral>();
 
         public ModConfigMenu(IModConsole console, IModData modData, IModBehaviour mod) : base(console)
         {
@@ -74,8 +78,10 @@ namespace OWML.ModHelper.Menus
 
         public override void Open()
         {
+            var start = Time.realtimeSinceStartup;
             base.Open();
             UpdateUIValues();
+            _console.WriteLine($"Opened {ModData.Manifest.Name}'s menu in {(Time.realtimeSinceStartup - start).ToString("N8")}");
         }
 
         private void AddInputs()
@@ -155,6 +161,7 @@ namespace OWML.ModHelper.Menus
             toggle.Element.name = key;
             toggle.Title = key;
             toggle.Show();
+            InputsRegistry.Add(key, toggle);
         }
 
         private void AddToggleInput(string key, JObject obj, int index)
@@ -165,6 +172,7 @@ namespace OWML.ModHelper.Menus
             toggle.Element.name = key;
             toggle.Title = (string)obj["title"] ?? key;
             toggle.Show();
+            InputsRegistry.Add(key, toggle);
         }
 
         private void AddSliderInput(string key, JObject obj, int index)
@@ -175,6 +183,7 @@ namespace OWML.ModHelper.Menus
             slider.Element.name = key;
             slider.Title = (string)obj["title"] ?? key;
             slider.Show();
+            InputsRegistry.Add(key, slider);
         }
 
         private void AddTextInput(string key, int index)
@@ -182,6 +191,7 @@ namespace OWML.ModHelper.Menus
             var textInput = AddTextInput(_textInputTemplate.Copy(key), index);
             textInput.Element.name = key;
             textInput.Show();
+            InputsRegistry.Add(key, textInput);
         }
 
         private void AddComboInput(string key, int index)
@@ -189,12 +199,74 @@ namespace OWML.ModHelper.Menus
             var comboInput = AddComboInput(_comboInputTemplate.Copy(key), index);
             comboInput.Element.name = key;
             comboInput.Show();
+            InputsRegistry.Add(key, comboInput);
         }
+
         private void AddNumberInput(string key, int index)
         {
             var numberInput = AddNumberInput(_numberInputTemplate.Copy(key), index);
             numberInput.Element.name = key;
             numberInput.Show();
+            InputsRegistry.Add(key, numberInput);
+        }
+
+        public override object GetInputValue(string key)
+        {
+            var input = InputsRegistry[key];
+            if (input is IModSliderInput)
+            {
+                return (input as IModSliderInput).Value;
+            }
+            if (input is IModToggleInput)
+            {
+                return (input as IModToggleInput).Value;
+            }
+            if (input is IModTextInput)
+            {
+                return (input as IModTextInput).Value;
+            }
+            if (input is IModComboInput)
+            {
+                return (input as IModComboInput).Value;
+            }
+            if (input is IModNumberInput)
+            {
+                return (input as IModNumberInput).Value;
+            }
+            _console.WriteLine("Error: no input found with name " + key);
+            return null;
+        }
+
+        public override void SetInputValue(string key, object value)
+        {
+            var input = InputsRegistry[key];
+            var val = value is JObject obj ? obj["value"] : value;
+            if (input is IModSliderInput)
+            {
+                (input as IModSliderInput).Value = Convert.ToSingle(val);
+                return;
+            }
+            if (input is IModToggleInput)
+            {
+                (input as IModToggleInput).Value = Convert.ToBoolean(val);
+                return;
+            }
+            if (input is IModTextInput)
+            {
+                (input as IModTextInput).Value = Convert.ToString(val);
+                return;
+            }
+            if (input is IModComboInput)
+            {
+                (input as IModComboInput).Value = Convert.ToString(val);
+                return;
+            }
+            if (input is IModNumberInput)
+            {
+                (input as IModNumberInput).Value = Convert.ToSingle(val);
+                return;
+            }
+            _console.WriteLine("Error: no input found with name " + key);
         }
 
         private void OnSave()

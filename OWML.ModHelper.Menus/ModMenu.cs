@@ -213,7 +213,7 @@ namespace OWML.ModHelper.Menus
             input.Element.transform.localScale = scale;
         }
 
-        public object GetInputValue(string key)
+        public virtual object GetInputValue(string key)
         {
             var slider = GetSliderInput(key);
             if (slider != null)
@@ -244,7 +244,7 @@ namespace OWML.ModHelper.Menus
             return null;
         }
 
-        public void SetInputValue(string key, object value)
+        public virtual void SetInputValue(string key, object value)
         {
             var slider = GetSliderInput(key);
             if (slider != null)
