@@ -32,12 +32,36 @@ jobs:
     - name: Create Build Directory
       run: mkdir _build
       
-    - name: Restore Packages
-      run: nuget restore OWML.sln
+    #- name: Restore Packages
+    #  run: nuget restore OWML.sln
+      
+    - name: Read Properties
+      id: read_property
+      uses:  ashley-taylor/read-json-property-action@v1.0
+      with:
+        path: OWML.Launcher/OWML.Manifest.json
+        property: version
     
-    - name: Build Solution
-      run: |
-        msbuild.exe OWML.sln /p:platform="Any CPU" /p:configuration="Debug" /p:PackageLocation="../_build"
+    - name: echo version
+      run: echo ${{ steps.read_property.outputs.value }}
+      
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+      with:
+        tag_name: ${{ steps.read_property.outputs.value }}
+        release_name: Release ${{ github.ref }}
+        body: |
+          Changes in this Release
+          - First Change
+          - Second Change
+        draft: true
+        prerelease: true
+    #- name: Build Solution
+    #  run: |
+    #    msbuild.exe OWML.sln /p:platform="Any CPU" /p:configuration="Debug" /p:PackageLocation="../_build"
         
    # - name: pack nuget
    #   run: nuget pack OWML.Nuget/OWML.Nuget.csproj
