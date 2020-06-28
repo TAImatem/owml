@@ -41,9 +41,13 @@ jobs:
         
    # - name: pack nuget
    #   run: nuget pack OWML.Nuget/OWML.Nuget.csproj
-    - name: Build project # This would actually build your project, using zip for an example artifact
-      run: |
-        zip --junk-paths my-artifact README.md
+    - uses: Amadevus/pwsh-script@v1
+      id: script
+      with:
+        script: Compress-Archive -Path './README.md' -DestinationPath './my-artifact.zip'
+    #- name: Build project # This would actually build your project, using zip for an example artifact
+    #  run: |
+    #    zip --junk-paths my-artifact README.md
     - name: Read Properties
       id: read_property
       uses:  ashley-taylor/read-json-property-action@v1.0
