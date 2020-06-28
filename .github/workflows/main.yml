@@ -69,10 +69,6 @@ jobs:
       with:
         tag_name: ${{ steps.read_property.outputs.value }}
         release_name: Release ${{ steps.read_property.outputs.value }} #not sure how to automate the body
-        body: |
-          Changes in this Release 
-          - First Change
-          - Second Change
         draft: false
         prerelease: false
     
