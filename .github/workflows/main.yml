@@ -1,23 +1,14 @@
-# This is a basic workflow to help you get started with Actions
-
 name: BuildToRelease
 
-# Controls when the action will run. Triggers the workflow on push or pull request
-# events but only for the master branch
 on:
   push:
-    branches: [ master ]
+    branches: [ master ] #possibly simply make separate workflow for PRs
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
   build:
-    # The type of runner that the job will run on
     runs-on: windows-latest
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
       
     - name: Setup MSBuild
@@ -36,7 +27,9 @@ jobs:
       id: script
       with:
         script: Compress-Archive -Path './' -DestinationPath './Sources.zip'
-      
+    
+    #the following is for creating release (misses moving stuff from build dir to release dir)
+    
     #- name: Restore Packages
     #  run: nuget restore OWML.sln
     
@@ -53,6 +46,7 @@ jobs:
         
    # - name: pack nuget
    #   run: nuget pack OWML.Nuget/OWML.Nuget.csproj
+    
     - name: Read Properties
       id: read_property
       uses:  ashley-taylor/read-json-property-action@v1.0
@@ -60,30 +54,27 @@ jobs:
         path: OWML.Launcher/OWML.Manifest.json
         property: version
     
-    - name: echo version
-      run: echo ${{ steps.read_property.outputs.value }}
-      
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
-      with:
-        tag_name: ${{ steps.read_property.outputs.value }}
-        release_name: Release ${{ steps.read_property.outputs.value }}
-        body: |
-          Changes in this Release
-          - First Change
-          - Second Change
-        draft: true
-        prerelease: true
-    
     - name: Upload artifact
       uses: actions/upload-artifact@v2
       with:
         name: release_artifact
         path: "./"
         #path: "./_release"
+    
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ steps.read_property.outputs.value }}
+        release_name: Release ${{ steps.read_property.outputs.value }} #not sure how to automate the body
+        body: |
+          Changes in this Release 
+          - First Change
+          - Second Change
+        draft: false
+        prerelease: false
     
     - name: Upload Release Asset
       id: upload-release-source 
@@ -95,6 +86,7 @@ jobs:
           asset_path: ./Sources.zip
           asset_name: Sources.zip
           asset_content_type: application/zip  
+    
     #- name: Upload Release Asset
     #  id: upload-release-asset 
     #  uses: actions/upload-release-asset@v1
