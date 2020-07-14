@@ -14,9 +14,6 @@ namespace OWML.ModHelper
         [JsonProperty("combinationsBlockInput")]
         public bool BlockInput { get; set; }
 
-        [JsonProperty("combinations block input")]
-        public bool BlockInput { get; private set; }
-
         [JsonIgnore]
         public string DataPath => $"{GamePath}/OuterWilds_Data";
 

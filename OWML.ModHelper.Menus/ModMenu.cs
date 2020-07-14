@@ -137,23 +137,6 @@ namespace OWML.ModHelper.Menus
             return button;
         }
 
-        public IModLayoutButton AddLayoutButton(IModLayoutButton button)
-        {
-            return AddLayoutButton(button, button.Index);
-        }
-
-        public virtual IModLayoutButton AddLayoutButton(IModLayoutButton button, int index)
-        {
-            var transform = button.Button.transform;
-            var scale = transform.localScale;
-            transform.parent = _layoutGroup.transform;
-            button.Index = index;
-            button.Initialize(this);
-            LayoutButtons.Add(button);
-            button.Button.transform.localScale = scale;
-            return button;
-        }
-
         public IModToggleInput GetToggleInput(string title)
         {
             return ToggleInputs.FirstOrDefault(x => x.Title == title || x.Element.name == title);
