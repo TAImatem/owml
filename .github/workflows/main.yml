@@ -1,0 +1,95 @@
+name: BuildToRelease
+
+on:
+  push:
+    branches: [ master ] #possibly simply make separate workflow for PRs
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v2
+      
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v1
+
+    - name: Setup NuGet
+      uses: NuGet/setup-nuget@v1.0.2
+      
+    - name: Navigate to Workspace
+      run: cd $GITHUB_WORKSPACE
+
+    - name: Create Build Directory
+      run: mkdir _build
+      
+    - uses: Amadevus/pwsh-script@v1
+      id: script
+      with:
+        script: Compress-Archive -Path './' -DestinationPath './Sources.zip'
+    
+    #the following is for creating release (misses moving stuff from build dir to release dir)
+    
+    #- name: Restore Packages
+    #  run: nuget restore OWML.sln
+    
+    #- name: Build Solution
+    #  run: |
+    #    msbuild.exe OWML.sln /p:platform="Any CPU" /p:configuration="Debug" /p:PackageLocation="../_build"
+    #- name: Create Build Directory
+    #  run: mkdir _release
+    # move built stuff into release folder
+    #- uses: Amadevus/pwsh-script@v1
+    #  id: script_2
+    #  with:
+    #    script: Compress-Archive -Path './_release' -DestinationPath './Release.zip'
+        
+   # - name: pack nuget
+   #   run: nuget pack OWML.Nuget/OWML.Nuget.csproj
+    
+    - name: Read Properties
+      id: read_property
+      uses:  ashley-taylor/read-json-property-action@v1.0
+      with:
+        path: OWML.Launcher/OWML.Manifest.json
+        property: version
+    
+    - name: Upload artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: release_artifact
+        path: "./"
+        #path: "./_release"
+    
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ steps.read_property.outputs.value }}
+        release_name: Release ${{ steps.read_property.outputs.value }} #not sure how to automate the body
+        draft: false
+        prerelease: false
+    
+    - name: Upload Release Asset
+      id: upload-release-source 
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+          asset_path: ./Sources.zip
+          asset_name: Sources.zip
+          asset_content_type: application/zip  
+    
+    #- name: Upload Release Asset
+    #  id: upload-release-asset 
+    #  uses: actions/upload-release-asset@v1
+    #  env:
+    #    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    #  with:
+    #      upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+     #     asset_path: ./Release.zip
+    #      asset_name: Release.zip
+    #      asset_content_type: application/zip  
